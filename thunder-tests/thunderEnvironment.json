@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "8808fa38-e127-4561-ac14-34c001cb076a",
+    "name": "LOCAL",
+    "default": true,
+    "sortNum": 10000,
+    "created": "2023-01-22T00:13:53.562Z",
+    "modified": "2023-01-22T00:13:53.562Z",
+    "data": [
+      {
+        "name": "URL",
+        "value": "http://localhost:8080/api"
+      }
+    ]
+  }
+]
