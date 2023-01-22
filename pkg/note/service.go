@@ -37,7 +37,7 @@ func (s *service) InsertNote(note *entities.Note) (*entities.Note, error) {
 func (s *service) GetNote(id uint) (*entities.Note, error) {
 	defer func () {
 		if err := recover(); err != nil {
-			log.Println(err)
+			log.Println("ERROR at note service's GetNote", err)
 		}
 	}()
 	

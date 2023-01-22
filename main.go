@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/salmanfr/catatann-api/api/routes"
 	"github.com/salmanfr/catatann-api/pkg/entities"
 	"github.com/salmanfr/catatann-api/pkg/note"
@@ -23,6 +24,12 @@ func main() {
 
 	app := fiber.New()
 
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowMethods: "GET, POST, PUT, DELETE, PATCH, OPTION",
+		AllowHeaders:  "Origin, Content-Type, Accept",
+	}))
+	
 	api := app.Group("/api")
 
 	noteRoutes := api.Group("/notes")

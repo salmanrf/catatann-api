@@ -12,5 +12,19 @@
     "headers": [],
     "params": [],
     "tests": []
+  },
+  {
+    "_id": "fe6db053-f2a1-40e5-955b-2d9ed0d3adc9",
+    "colId": "3d444f9c-766b-4320-906e-fe060f11f9be",
+    "containerId": "e0d7cd0d-eb94-4b4e-ab58-26835574c1ee",
+    "name": "Create Note",
+    "url": "{{URL}}/notes/",
+    "method": "POST",
+    "sortNum": 20000,
+    "created": "2023-01-22T10:32:25.544Z",
+    "modified": "2023-01-22T11:09:41.036Z",
+    "headers": [],
+    "params": [],
+    "tests": []
   }
 ]
