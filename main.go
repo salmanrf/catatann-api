@@ -27,20 +27,20 @@ func main() {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET, POST, PUT, DELETE, PATCH, OPTION",
-		AllowHeaders:  "Origin, Content-Type, Accept",
+		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
-	
+
 	api := app.Group("/api")
 
 	noteRoutes := api.Group("/notes")
 
 	routes.NoteRouter(noteRoutes, noteService)
-	
+
 	app.Listen(":8080")
 }
 
 func ConnectDB() (*gorm.DB, error) {
-	dsn := ""
+	dsn := "host=localhost user=salmanrf password='philiasophia123' dbname=catatann port=5433 sslmode=disable"
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
