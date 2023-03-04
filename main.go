@@ -4,16 +4,26 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
+	"github.com/salmanfr/catatann-api/api/middlewares"
 	"github.com/salmanfr/catatann-api/api/routes"
 	"github.com/salmanfr/catatann-api/pkg/entities"
 	"github.com/salmanfr/catatann-api/pkg/note"
+	"github.com/salmanfr/catatann-api/pkg/user"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 func main() {
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal("error loading .env file")
+		
+		return
+	}
+
 	db, err := ConnectDB()
 
 	if err != nil {
@@ -21,20 +31,25 @@ func main() {
 	}
 
 	noteService := note.NewService(db)
+	userService := user.NewService(db)
 
 	app := fiber.New()
 
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowMethods: "GET, POST, PUT, DELETE, PATCH, OPTION",
-		AllowHeaders: "Origin, Content-Type, Accept",
-	}))
+	app.Use(middlewares.Cors)
+	
+	// app.Use(cors.New(cors.Config{
+	// 	AllowOrigins: []string{"*"},
+	// 	AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTION"},
+	// 	AllowHeaders: []string{"Origin", "Content-Type", "Accept"},
+	// }))
 
 	api := app.Group("/api")
 
-	noteRoutes := api.Group("/notes")
+	noteRouter := api.Group("/notes")
+	userRouter := api.Group("/users")
 
-	routes.NoteRouter(noteRoutes, noteService)
+	routes.NoteRouter(noteRouter, noteService)
+	routes.UserRoutes(userRouter, userService)
 
 	app.Listen(":8080")
 }
@@ -50,11 +65,11 @@ func ConnectDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	log.Println("Connected.")
+	log.Println("Connected to the database.")
 
 	db.Logger = logger.Default.LogMode(logger.Info)
 
-	db.AutoMigrate(&entities.Note{})
+	db.AutoMigrate(&entities.Note{}, &entities.User{}, &entities.Token{})
 
 	return db, nil
 }

@@ -38,7 +38,7 @@ func ValidateBody[T any](dto T) func(c *fiber.Ctx) error {
 
 		if err != nil {
 			for _, err := range err.(validator.ValidationErrors) {
-				error_messages = append(error_messages, fmt.Sprintf("%s %s %s", err.StructNamespace(), err.Tag(), err.Param()))
+				error_messages = append(error_messages, fmt.Sprintf("%s %s %s", err.StructField(), err.Tag(), err.Param()))
 			}
 
 			c.Status(http.StatusBadRequest)
