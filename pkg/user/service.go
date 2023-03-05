@@ -62,8 +62,6 @@ func (s *service) RefreshToken(refresh_token string) (*models.SigninResponse, *m
 	claims, err := common.VerifyJwt(refresh_token, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET"))
 
 	if err != nil {
-		fmt.Println("err", err)
-		
 		return nil, models.CreateCustomHttpError(http.StatusUnauthorized, err)
 	}
 	
@@ -277,7 +275,7 @@ func (s *service) createRefreshToken(user_id string) (string, error) {
 		return "", res.Error
 	}
 	
-	token, err := common.GenerateJwt(time.Hour * 1, refresh_token.TokenId, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET"))
+	token, err := common.GenerateJwt(time.Hour * 24 * 365, refresh_token.TokenId, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET"))
 	
 	if err != nil {
 		return "", err

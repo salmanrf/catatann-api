@@ -12,4 +12,5 @@ type User struct {
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
   UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
   DisabledAt *time.Time `json:"disabled_at" gorm:"type:timestamp without time zone;"`
+	Notes []Note `json:"notes" gorm:"foreignKey:UserId;references:UserId"`
 }

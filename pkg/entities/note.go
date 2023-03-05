@@ -8,4 +8,5 @@ type Note struct {
 	Content string `json:"content" gorm:"type:text;not null;"`
   CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
   UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+	UserId string `json:"user_id" gorm:"type:uuid;not null"`
 }
