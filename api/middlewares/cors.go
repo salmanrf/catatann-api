@@ -12,7 +12,7 @@ func Cors(c * fiber.Ctx) error {
 	// fmt.Println("METHOD", c.Method())
 	
 	c.Set("Access-Control-Allow-Origin", "http://localhost:5173")
-	c.Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
+	c.Set("Access-Control-Allow-Headers", "Authorization, Origin, Content-Type, Accept")
 	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE")
 	c.Set("Access-Control-Allow-Credentials", "true")
 

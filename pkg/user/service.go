@@ -20,6 +20,7 @@ type Service interface {
 	Signin(dto models.SigninDto) (*models.SigninResponse, *models.CustomHttpErrors)
 	GetSelf(access_token string) (*entities.User, *models.CustomHttpErrors)
 	RefreshToken(refresh_token string) (*models.SigninResponse, *models.CustomHttpErrors)
+	InvalidateRefreshToken(refresh_token string) error
 }
 
 type service struct {
@@ -80,11 +81,7 @@ func (s *service) RefreshToken(refresh_token string) (*models.SigninResponse, *m
 		return nil, models.CreateCustomHttpError(http.StatusNotFound, "user not registered")
 	}
 	
-	fmt.Println("refresh token", token)
-	
 	if token.LastUsedAt != nil {
-		fmt.Println("token has been used before")
-		
 		now := time.Now()
 		user.DisabledAt = &now
 
@@ -93,7 +90,7 @@ func (s *service) RefreshToken(refresh_token string) (*models.SigninResponse, *m
 		return nil, models.CreateCustomHttpError(http.StatusForbidden, "forbidden access")
 	} 
 
-	if err := s.invalidateRefreshToken(token.TokenId); err != nil {
+	if err := s.InvalidateRefreshToken(token.TokenId); err != nil {
 		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, err)
 	}
 
@@ -289,7 +286,7 @@ func (s *service) createRefreshToken(user_id string) (string, error) {
 	return token, nil
 }
 
-func (s *service) invalidateRefreshToken(token_id string) error {
+func (s *service) InvalidateRefreshToken(token_id string) error {
 	res := s.db.Model(&entities.Token{}).Where("token_id = ?", token_id).Updates(map[string]interface{}{"last_used_at": time.Now()})
 
 	return res.Error

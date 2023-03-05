@@ -25,12 +25,6 @@ func GetGoogleOAuthToken(code string) (*models.GoogleOAuthToken, error) {
 	values.Add("client_secret", os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"))
 	values.Add("redirect_uri", os.Getenv("GOOGLE_OAUTH_REDIRECT_URL"))
 
-	fmt.Println("grant_type", values.Get("grant_type"))
-	fmt.Println("code", values.Get("code"))
-	fmt.Println("client_id", values.Get("client_id"))
-	fmt.Println("client_secret", values.Get("client_secret"))
-	fmt.Println("redirect_uri", values.Get("redirect_uri"))
-	
 	query := values.Encode()
 
 	req, err := http.NewRequest("POST", root_url, bytes.NewBufferString(query))
