@@ -63,7 +63,7 @@ func GoogleSignin(s user.Service) fiber.Handler {
 			HTTPOnly: true,
 		})
 
-		return c.Redirect(fmt.Sprintf("http://localhost:5173%s", path_url))
+		return c.Redirect(fmt.Sprintf("%s%s", os.Getenv("CATATANN_CLIENT_URL"), path_url))
 	}
 }
 
