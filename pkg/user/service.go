@@ -79,15 +79,6 @@ func (s *service) RefreshToken(refresh_token string) (*models.SigninResponse, *m
 		return nil, models.CreateCustomHttpError(http.StatusNotFound, "user not registered")
 	}
 	
-	if token.LastUsedAt != nil {
-		now := time.Now()
-		user.DisabledAt = &now
-
-		s.db.Save(&user)
-
-		return nil, models.CreateCustomHttpError(http.StatusForbidden, "forbidden access")
-	} 
-
 	if err := s.InvalidateRefreshToken(token.TokenId); err != nil {
 		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, err)
 	}
@@ -285,7 +276,7 @@ func (s *service) createRefreshToken(user_id string) (string, error) {
 }
 
 func (s *service) InvalidateRefreshToken(token_id string) error {
-	res := s.db.Model(&entities.Token{}).Where("token_id = ?", token_id).Updates(map[string]interface{}{"last_used_at": time.Now()})
+	res := s.db.Model(&entities.Token{}).Where("token_id = ?", token_id).Delete(&entities.Token{})
 
 	return res.Error
 }
