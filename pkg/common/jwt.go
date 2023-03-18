@@ -37,7 +37,7 @@ func VerifyJwt(token string, signedJwtKey string) (jwt.MapClaims, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("invalidate token: %w", err)
+		return nil, fmt.Errorf("invalid token: %w", err)
 	}
 
 	claims, ok := tkn.Claims.(jwt.MapClaims)
