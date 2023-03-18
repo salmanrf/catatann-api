@@ -53,9 +53,21 @@ func GoogleSignin(s user.Service) fiber.Handler {
 			return c.JSON(presenters.UserCustomErrorResponse(err))
 		}
 
+		// ? Refresh token for user
 		c.Cookie(&fiber.Cookie{
 			Name: "ctnn_refresh_token",
 			Value: res.RefreshToken,
+			Expires: time.Now().Add(time.Hour * 24 * 365),
+			Path: "/",
+			Domain: "",
+			Secure: true,
+			HTTPOnly: true,
+		})
+
+		// ? Refresh token for chrome extension
+		c.Cookie(&fiber.Cookie{
+			Name: "ctnn_extension_refresh_token",
+			Value: res.ExtRefreshToken,
 			Expires: time.Now().Add(time.Hour * 24 * 365),
 			Path: "/",
 			Domain: "",
@@ -103,9 +115,21 @@ func Signin(s user.Service) fiber.Handler {
 			return c.JSON(presenters.UserCustomErrorResponse(err))
 		}
 
+		// ? Refresh token for user
 		c.Cookie(&fiber.Cookie{
 			Name: "ctnn_refresh_token",
 			Value: res.RefreshToken,
+			Expires: time.Now().Add(time.Hour * 24 * 365),
+			Path: "/",
+			Domain: "",
+			Secure: true,
+			HTTPOnly: true,
+		})
+
+		// ? Refresh token for chrome extension
+		c.Cookie(&fiber.Cookie{
+			Name: "ctnn_extension_refresh_token",
+			Value: res.ExtRefreshToken,
 			Expires: time.Now().Add(time.Hour * 24 * 365),
 			Path: "/",
 			Domain: "",
@@ -160,7 +184,7 @@ func GetRefreshToken(s user.Service) fiber.Handler {
 			return c.JSON(presenters.UserCustomErrorResponse(models.CreateCustomHttpError(http.StatusUnauthorized, "session has expired")))
 		}
 
-		res, err := s.RefreshToken(refresh_token)
+		res, err := s.RefreshToken(refresh_token, "client")
 
 		if err != nil {
 			c.Status(err.Code)
@@ -177,9 +201,59 @@ func GetRefreshToken(s user.Service) fiber.Handler {
 			Secure: true,
 			HTTPOnly: true,
 		})
+
+		c.Cookie(&fiber.Cookie{
+			Name: "ctnn_extension_refresh_token",
+			Value: res.ExtRefreshToken,
+			Expires: time.Now().Add(time.Hour * 24 * 365),
+			Path: "/",
+			Domain: "",
+			Secure: true,
+			HTTPOnly: true,
+		})
 		
 		res.RefreshToken = ""
+		res.ExtRefreshToken = ""
 
 		return c.JSON(presenters.UserSuccessResponse(res))
+	}
+}
+
+func GetExtensionRefreshToken(s user.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		refresh_token := c.Cookies("ctnn_extension_refresh_token", "")
+
+		if refresh_token == "" {
+			c.Status(http.StatusUnauthorized)
+			
+			return c.JSON(presenters.UserCustomErrorResponse(models.CreateCustomHttpError(http.StatusUnauthorized, "session has expired")))
+		}
+
+		fmt.Println("EXT REFRESH TOKEN", refresh_token)
+		
+		res, err := s.RefreshToken(refresh_token, "extension")
+
+		if err != nil {
+			c.Status(err.Code)
+			
+			return c.JSON(presenters.UserCustomErrorResponse(err))
+		}
+		
+		c.Cookie(&fiber.Cookie{
+			Name: "ctnn_extension_refresh_token",
+			Value: "",
+			Expires: time.Now().Add(time.Hour * -24),
+			Path: "/",
+			Domain: "",
+			Secure: true,
+			HTTPOnly: true,
+		})
+		
+		signinResponse := models.ExtensionSigninResponse{
+			AccessToken: res.AccessToken,
+			RefreshToken: res.RefreshToken,
+		}
+		
+		return c.JSON(presenters.UserSuccessResponse(signinResponse))
 	}
 }

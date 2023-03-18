@@ -14,6 +14,12 @@ type SignupResponse struct {
 type SigninResponse struct {
 	User entities.User `json:"user"`
 	AccessToken string `json:"access_token"`
+	RefreshToken string
+	ExtRefreshToken string
+}
+
+type ExtensionSigninResponse struct {
+	AccessToken string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 

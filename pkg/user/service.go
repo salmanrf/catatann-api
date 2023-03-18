@@ -19,7 +19,7 @@ type Service interface {
 	Signup(dto models.SignupDto) (*models.SigninResponse, error)
 	Signin(dto models.SigninDto) (*models.SigninResponse, *models.CustomHttpErrors)
 	GetSelf(access_token string) (*entities.User, *models.CustomHttpErrors)
-	RefreshToken(refresh_token string) (*models.SigninResponse, *models.CustomHttpErrors)
+	RefreshToken(refresh_token string, source string) (*models.SigninResponse, *models.CustomHttpErrors)
 	InvalidateRefreshToken(refresh_token string) error
 }
 
@@ -55,13 +55,25 @@ func (s *service) GetSelf(access_token string) (*entities.User, *models.CustomHt
 	return &user, nil
 }
 
-func (s *service) RefreshToken(refresh_token string) (*models.SigninResponse, *models.CustomHttpErrors) {
+func (s *service) RefreshToken(refresh_token string, source string) (*models.SigninResponse, *models.CustomHttpErrors) {
 	var token entities.Token
 	var user entities.User
 	
-	claims, err := common.VerifyJwt(refresh_token, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET"))
+	jwt_secret := os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET")
+	
+	fmt.Println("jwt_secret", jwt_secret)
+	
+	if source == "extension" {
+		jwt_secret = os.Getenv("EXT_REFRESH_TOKEN_JWT_SECRET")
+	}
+	
+	fmt.Println("jwt_secret", jwt_secret)
+	
+	claims, err := common.VerifyJwt(refresh_token, jwt_secret)
 
 	if err != nil {
+		fmt.Println("Jwt Verify Error", err.Error())
+		
 		return nil, models.CreateCustomHttpError(http.StatusUnauthorized, err)
 	}
 	
@@ -83,19 +95,39 @@ func (s *service) RefreshToken(refresh_token string) (*models.SigninResponse, *m
 		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, err)
 	}
 
-	// ? Save Refresh Token to get the auto generated token_id
 	newRefreshToken := entities.Token{
 		UserId: user.UserId,
 	}
 	
+	newExtensionRefreshToken := entities.Token {
+		UserId: user.UserId,
+	}
+	
+	// ? Save Refresh Token to get the auto generated token_id
 	res = s.db.Create(&newRefreshToken) 
+	var extTokenRes *gorm.DB
+
+	if source != "extension" {
+		extTokenRes = s.db.Create(&newExtensionRefreshToken)
+	}
 	
 	if res.Error != nil {
 		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, "internal server error")
 	}
 
+	if extTokenRes != nil && extTokenRes.Error != nil {
+		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, "internal server error")
+	}
+
 	// ? New Refresh Token
-	newRft, err := common.GenerateJwt(time.Hour * 1, newRefreshToken.TokenId, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET")) 
+	newRft, err := common.GenerateJwt(time.Hour * 24 * 365, newRefreshToken.TokenId, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET")) 
+
+	// ? Generate new Extension Refresh Token if requested from Web Client
+	newExtRft := ""
+	if source != "extension" {
+		newExtRft, err = common.GenerateJwt(time.Hour * 24 * 365, newExtensionRefreshToken.TokenId, os.Getenv("EXT_REFRESH_TOKEN_JWT_SECRET"))
+	}
+	
 	// ? New Acces Token
 	newAct, err := common.GenerateJwt(time.Hour * 1, user.UserId, os.Getenv("USER_ACCESS_TOKEN_JWT_SECRET")) 
 	
@@ -105,7 +137,7 @@ func (s *service) RefreshToken(refresh_token string) (*models.SigninResponse, *m
 	
 	user.Password = ""
 	
-	return &models.SigninResponse{User: user, AccessToken: newAct, RefreshToken: newRft}, nil
+	return &models.SigninResponse{User: user, AccessToken: newAct, RefreshToken: newRft, ExtRefreshToken: newExtRft}, nil
 }
 
 func (s *service ) GoogleSignin(code string) (*models.SigninResponse, *models.CustomHttpErrors) {
@@ -158,7 +190,8 @@ func (s *service ) GoogleSignin(code string) (*models.SigninResponse, *models.Cu
 	user := users[0]
 	
 	access_token, err := common.GenerateJwt(time.Minute * 10, user.UserId, os.Getenv("USER_ACCESS_TOKEN_JWT_SECRET"))
-	refresh_token, err := s.createRefreshToken(user.UserId)
+	refresh_token, err := s.createRefreshToken(user.UserId, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET"))
+	ext_refresh_token, err := s.createRefreshToken(user.UserId, os.Getenv("EXT_REFRESH_TOKEN_JWT_SECRET"))
 
 	if err != nil {
 		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, err)
@@ -170,6 +203,7 @@ func (s *service ) GoogleSignin(code string) (*models.SigninResponse, *models.Cu
 		User: user,
 		AccessToken: access_token,
 		RefreshToken: refresh_token,
+		ExtRefreshToken: ext_refresh_token,
 	}
 	
 	return &response, nil
@@ -242,7 +276,8 @@ func (s *service) Signin(dto models.SigninDto) (*models.SigninResponse, *models.
 	user.Provider = ""
 	
 	access_token, err := common.GenerateJwt(time.Minute * 10, user.UserId, os.Getenv("USER_ACCESS_TOKEN_JWT_SECRET"))
-	refresh_token, err := s.createRefreshToken(user.UserId)
+	refresh_token, err := s.createRefreshToken(user.UserId, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET"))
+	ext_refresh_token, err := s.createRefreshToken(user.UserId, os.Getenv("EXT_REFRESH_TOKEN_JWT_SECRET"))
 
 	if err != nil {
 		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, err)
@@ -252,10 +287,10 @@ func (s *service) Signin(dto models.SigninDto) (*models.SigninResponse, *models.
 		return nil,  models.CreateCustomHttpError(http.StatusInternalServerError, "unable to generate tokens")
 	}
 	
-	return &models.SigninResponse{User: user, AccessToken: access_token, RefreshToken: refresh_token}, nil
+	return &models.SigninResponse{User: user, AccessToken: access_token, RefreshToken: refresh_token, ExtRefreshToken: ext_refresh_token}, nil
 }
 
-func (s *service) createRefreshToken(user_id string) (string, error) {
+func (s *service) createRefreshToken(user_id string, secret string) (string, error) {
 	var refresh_token entities.Token
 
 	refresh_token.UserId = user_id
@@ -266,7 +301,7 @@ func (s *service) createRefreshToken(user_id string) (string, error) {
 		return "", res.Error
 	}
 	
-	token, err := common.GenerateJwt(time.Hour * 24 * 365, refresh_token.TokenId, os.Getenv("USER_REFRESH_TOKEN_JWT_SECRET"))
+	token, err := common.GenerateJwt(time.Hour * 24 * 365, refresh_token.TokenId, secret)
 	
 	if err != nil {
 		return "", err
