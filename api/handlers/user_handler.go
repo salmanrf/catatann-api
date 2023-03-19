@@ -219,7 +219,7 @@ func GetRefreshToken(s user.Service) fiber.Handler {
 	}
 }
 
-func GetExtensionRefreshToken(s user.Service) fiber.Handler {
+func ExtensionSignin(s user.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		refresh_token := c.Cookies("ctnn_extension_refresh_token", "")
 
