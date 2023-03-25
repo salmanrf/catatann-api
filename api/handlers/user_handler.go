@@ -219,6 +219,28 @@ func GetRefreshToken(s user.Service) fiber.Handler {
 	}
 }
 
+func ExtensionGetRefreshToken(s user.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		dto := c.Locals("dto").(models.ExtensionRefreshTokenDto)
+
+		if dto.RefreshToken == "" {
+			c.Status(http.StatusUnauthorized)
+			
+			return c.JSON(presenters.UserCustomErrorResponse(models.CreateCustomHttpError(http.StatusUnauthorized, "session has expired")))
+		}
+
+		res, err := s.RefreshToken(dto.RefreshToken, "extension")
+
+		if err != nil {
+			c.Status(err.Code)
+			
+			return c.JSON(presenters.UserCustomErrorResponse(err))
+		}
+
+		return c.JSON(presenters.UserSuccessResponse(res))
+	}
+}
+
 func ExtensionSignin(s user.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		refresh_token := c.Cookies("ctnn_extension_refresh_token", "")

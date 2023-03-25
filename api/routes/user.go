@@ -12,8 +12,9 @@ func UserRoutes(app fiber.Router, s user.Service) {
 	app.Get("/google-oauth/callback", handlers.GoogleSignin(s))
 	app.Post("/signup", middlewares.ValidateBody(models.SignupDto{}), handlers.Signup(s))
 	app.Post("/signin", middlewares.ValidateBody(models.SigninDto{}), handlers.Signin(s))
-	app.Get("/extension-singin", handlers.ExtensionSignin(s))
+	app.Get("/extension-signin", handlers.ExtensionSignin(s))
 	app.Get("/signout", handlers.Signout(s))
 	app.Get("/self", handlers.GetSelf(s))
 	app.Get("/refresh", handlers.GetRefreshToken(s))
+	app.Post("/extension-refresh", middlewares.ValidateBody(models.ExtensionRefreshTokenDto{}), handlers.ExtensionGetRefreshToken(s))
 }
