@@ -9,14 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func Paginate(value interface{}, pagination *models.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB {
+func Paginate(pagination *models.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB {
 	var totalItems int64
 
 	if pagination.Limit == 0 {
 		pagination.Limit = 10
 	}
 	
-	db.Model(value).Count(&totalItems)
+	db.Count(&totalItems)
 
 	pagination.TotalItems = totalItems
 	totalPages := int(math.Ceil(float64(totalItems) / float64(pagination.Limit)))

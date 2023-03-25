@@ -64,7 +64,7 @@ func (s *service) FindNotes(dto models.FindNoteDto) (*models.Pagination, *models
 		Page:  dto.Page,
 	}
 
-	query := s.db.Scopes(common.Paginate(notes, pagination, s.db))
+	query := s.db.Model(&entities.Note{})
 
 	if dto.UserId != "" {
 		query.Where("user_id = ?", dto.UserId)
@@ -78,6 +78,8 @@ func (s *service) FindNotes(dto models.FindNoteDto) (*models.Pagination, *models
 		query.Where("content ILIKE ?", fmt.Sprintf("%%%s%%", dto.Content))
 	}
 
+	query.Scopes(common.Paginate(pagination, query))
+	
 	res := query.Find(&notes)
 
 	if res.Error != nil {
