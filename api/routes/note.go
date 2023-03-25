@@ -10,6 +10,12 @@ import (
 
 func NoteRouter(app fiber.Router, s note.Service) {
 	app.Get(
+		"/search",
+		middlewares.AuthorizationGuard,
+		middlewares.ValidateQuery(models.SearchNoteDto{}),
+		handlers.SearchNotes(s),
+	)
+	app.Get(
 		"/:note_id",
 		middlewares.AuthorizationGuard,
 		handlers.FindOneNote(s),

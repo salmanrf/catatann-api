@@ -12,6 +12,7 @@ import (
 
 type Service interface {
 	InsertNote(note *models.CreateNoteDto) (*entities.Note, *models.CustomHttpErrors)
+	SearchNotes(dto models.SearchNoteDto) (*models.Pagination, *models.CustomHttpErrors)
 	FindOneNote(note_id string, user_id string) (*entities.Note, *models.CustomHttpErrors)
 	FindNotes(dto models.FindNoteDto) (*models.Pagination, *models.CustomHttpErrors)
 	UpdateNote(note_id string, dto models.UpdateNoteDto) (*entities.Note, *models.CustomHttpErrors)
@@ -54,6 +55,39 @@ func (s *service) FindOneNote(note_id string, user_id string) (*entities.Note, *
 	}
 
 	return &note, nil
+}
+
+func (s *service) SearchNotes(dto models.SearchNoteDto) (*models.Pagination, *models.CustomHttpErrors) {
+	var notes []entities.Note
+
+	pagination := &models.Pagination{
+		Limit: dto.Limit,
+		Page:  dto.Page,
+	}
+
+	query := s.db.Model(&entities.Note{})
+
+	if dto.UserId != "" {
+		query.Where("user_id = ?", dto.UserId)
+	}
+	
+	if dto.Keyword != "" {
+		keyword := fmt.Sprintf("%%%s%%", dto.Keyword)
+		query.Where("(title ILIKE ? OR content ILIKE ?)", keyword, keyword)
+	}
+
+	query.Select("note_id", "title")
+	query.Scopes(common.Paginate(pagination, query))
+
+	res := query.Find(&notes)
+	
+	if res.Error != nil {
+		return nil, models.CreateCustomHttpError(http.StatusInternalServerError, res.Error.Error())
+	}
+	
+	pagination.Items = notes
+	
+	return pagination, nil
 }
 
 func (s *service) FindNotes(dto models.FindNoteDto) (*models.Pagination, *models.CustomHttpErrors) {

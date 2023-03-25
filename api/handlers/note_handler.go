@@ -54,6 +54,32 @@ func FindOneNote(s note.Service) fiber.Handler {
 	}
 }
 
+func SearchNotes(s note.Service) fiber.Handler {
+	return func (c *fiber.Ctx) error {
+		dto, valid := c.Locals("dto").(models.SearchNoteDto)
+
+		user_id := c.Locals("decoded").(jwt.MapClaims)["sub"].(string)
+		
+		if !valid {
+			c.Status(http.StatusBadRequest)
+
+			return c.JSON(presenters.NoteCustomErrorResponse(models.CreateCustomHttpError(http.StatusBadRequest, "invalid request parameters")))
+		}
+
+		dto.UserId = user_id
+		
+		res, err := s.SearchNotes(dto)
+
+		if err != nil {
+			c.Status(err.Code)
+
+			return c.JSON(presenters.NoteCustomErrorResponse(err))
+		}
+
+		return c.JSON(presenters.NoteSuccessResponse(res))
+	}
+}
+
 func FindNotes(s note.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		findDto, valid := c.Locals("dto").(models.FindNoteDto)

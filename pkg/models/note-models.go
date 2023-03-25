@@ -14,7 +14,14 @@ type UpdateNoteDto struct {
 
 type FindNoteDto struct {
 	PaginationRequest
+	Keyword string `json:"keyword" query:"keyword"`
 	Title   string `json:"title" query:"title"`
 	Content string `json:"content" query:"content"`
 	UserId  string `json:"user_id" query:"user_id"`
+}
+
+type SearchNoteDto struct {
+	PaginationRequest
+	Keyword string `json:"keyword" query:"keyword"` 
+	UserId string
 }
